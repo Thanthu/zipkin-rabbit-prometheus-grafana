@@ -1,0 +1,42 @@
+version: "3.8"
+
+services:
+
+  grafana:
+    image: "grafana/grafana:latest"
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=password
+    depends_on:
+      - prometheus  
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+
+  rabbitmq:  
+    image: rabbitmq:3-management  
+    ports:    
+      - 5672:5672    
+      - 15672:15672  
+    healthcheck:    
+      test: ["CMD", "rabbitmqctl", "status"]    
+      interval: 10s
+      timeout: 5s    
+      retries: 10
+
+  zipkin:
+    image: openzipkin/zipkin
+    ports:
+      - "9411:9411"
+    environment:
+    - RABBIT_ADDRESSES=rabbitmq
+    - STORAGE_TYPE=mem
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
